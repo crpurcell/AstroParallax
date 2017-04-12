@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+
+<!--
+ Illustration of Astronomical Parallax inspired by the tutorial found at
+ physics.weber.edu/schroeder/html5/.
+
+ The MIT License (MIT)                                                       
+
+ Copyright (c) 2017 Cormac R. Purcell                                        
+                                                                             
+ Permission is hereby granted, free of charge, to any person obtaining a     
+ copy of this software and associated documentation files (the "Software"),  
+ to deal in the Software without restriction, including without limitation   
+ the rights to use, copy, modify, merge, publish, distribute, sublicense,    
+ and/or sell copies of the Software, and to permit persons to whom the       
+ Software is furnished to do so, subject to the following conditions:        
+                                                                             
+ The above copyright notice and this permission notice shall be included in  
+ all copies or substantial portions of the Software.                         
+                                                                             
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,    
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER      
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING     
+ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER         
+ DEALINGS IN THE SOFTWARE.                                                   
+-->
+
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=400">
+    <title>Astronomical Parallax Simulation</title>
+    <style>
+      input[type="range"] {
+        width: 140px;
+        padding: 0px;       /* remove extra space in IE */
+        -webkit-user-select: none;
+        -moz-user-select: -moz-none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+      input[type="range"]::-ms-tooltip {
+        display: none;          /* hide automatic readout in IE */
+      }
+      input[type="range"]::-ms-track {
+        color: transparent;     /* hide tick marks in IE */
+      }
+    </style>
+  </head>
+  <body style="font-family:sans-serif; 
+	       font-size:15px; 
+	       width:400px; 
+	       margin-left:auto; 
+	       margin-right:auto; 
+	       background-color: #bababa;">
+    <h1>Astronomical Parallax</h1>
+    <p>This simulation allows you to explore the parallax behaviour of a
+      relatively nearby object seen against a far-field background.</p>
+    
+    <div style="width:300px; margin-left:auto; margin-right:auto;">
+      <img src="parallax_bg.png" width="300" height="400"
+	   style="position:absolute;">
+      <canvas id="mainCanvas" width="300" height="400"
+	      style="position:relative;" >
+	Canvas not supported; please update your browser.
+      </canvas>
+    </div>
+
+    <div style="text-align:center;">
+      &nbsp;&nbsp;&nbsp;
+      Distance = <span id="distReadout" style="display:inline-block;
+			width:1.3em; text-align:right;">0.7</span> parsec
+      <input type="range" id="distSlider" min="0.5" max="2.0" step="0.1"
+	     value="0.7" style="width: 200px;" oninput="showDist();"
+	     onchange="showDist();">
+  </div>
+    
+    <script>
+
+    // Canvas & widget elements
+    var mainCanvas = document.getElementById("mainCanvas");
+    var ctx = mainCanvas.getContext("2d");
+    var distSlider = document.getElementById("distSlider");
+    var distReadout = document.getElementById("distReadout");
+    
+    // Positions on background image (in pixels unless otherwise stated)
+    var xE, yE                    // Earth position
+    var d_pc, d_pix               // Object distance
+    var xO = 0, yO                // Object position
+    var theta_deg = 0             // Orbit starting angle
+    var dTheta_deg = 1            // Orbit angle increment
+
+    // Variables for 600 x 800 image
+    //var R = 100                   // Earth orbit radius
+    //var yOMin = 200, yOMax = 500  // Object position limits
+    //var yH = 100                  // Horizon line
+    //var xSun = 298, ySun = 680    // Sun position
+    //var annOff = 50               // Angle annotation offset
+
+    
+    // Variables for 300 x 400 image
+    var R = 60                    // Earth orbit radius
+    var yOMin = 100, yOMax = 250  // Object position limits
+    var yH = 50                   // Horizon line
+    var xSun = 150, ySun = 340    // Sun position
+    var annOff = 25               // Angle annotation offset
+    
+    function distToPix() {
+
+      // Convert the distance on the slider to pixel coordinates
+      d_pc = Number(distSlider.value);
+      var dMin_pc = Number(distSlider.min);
+      var dMax_pc = Number(distSlider.max);
+      tmp = (d_pc - dMin_pc) * (yOMax - yOMin) / (dMax_pc - dMin_pc);
+      yO = yOMax - tmp;
+      d_pix = ySun - yO
+    }
+
+    function showDist() {
+
+      // Show the distance value in the HTML
+      distReadout.innerHTML = distSlider.value;
+    }
+    
+    
+    function drawAll() {
+
+      // Update the object distance from the slider
+      distToPix();
+    
+      // Earth position relative to top-left
+      var xE_tl =  xSun + xE
+      var yE_tl =  ySun + yE
+    
+      // Object position relative to top-left
+      var xO_tl = xSun + xO
+      var yO_tl = yO
+
+      // Projected horizon position, relative to top-left
+      var yH_tl = yH
+      var xH_tl = xSun - xE * (yO - yH) / (yE_tl - yO)
+
+      // Clear the canvas for a new frame
+      ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);    
+    
+      // Draw connecting lines
+      ctx.beginPath();
+      ctx.moveTo(xE_tl, yE_tl);
+      ctx.lineTo(xH_tl, yH_tl);
+      ctx.setLineDash([7, 3])
+      ctx.lineWidth=2;
+      ctx.strokeStyle = 'grey';
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(xH_tl, yH_tl);
+      ctx.lineTo(xO_tl, yH_tl);
+      ctx.setLineDash([7, 0])
+      ctx.strokeStyle = 'yellow';
+      ctx.stroke();
+
+      // Draw Earth
+      ctx.beginPath();
+      ctx.arc(xE_tl, yE_tl, 5, 0, 2*Math.PI);
+      var grad = ctx.createRadialGradient(xE_tl-1, yE_tl-2, 1,
+                                          xE_tl, yE_tl, 5);
+      grad.addColorStop(0, "#b3bdf8");
+      grad.addColorStop(1, "blue");
+      ctx.fillStyle = grad;
+      ctx.fill();
+
+      // Draw object
+      var xO_tl = xSun + xO
+      var yO_tl = yO
+      ctx.beginPath();
+      ctx.arc(xO_tl, yO_tl, 5, 0, 2*Math.PI);
+      var grad1 = ctx.createRadialGradient(xO_tl-1, yO_tl-2, 1,
+                                           xO_tl, yO_tl, 5);
+      grad1.addColorStop(0, "white");
+      grad1.addColorStop(1, "green");
+      ctx.fillStyle = grad1;
+      ctx.fill();
+
+      // Draw the angle annotation
+      var ang = Math.atan(R/d_pix)
+      ctx.beginPath();
+      ctx.arc(xO_tl, yO_tl, annOff, -ang-Math.PI/2, +ang-Math.PI/2);
+      ctx.strokeStyle = "yellow";
+      ctx.lineWidth=2;
+      ctx.stroke();
+      ctx.font = "16px Verdana";
+      ctx.fillStyle = "yellow";
+      var parAngle_asec = 1/d_pc
+      var annTxt = "Angle = " + parAngle_asec.toFixed(2) + "''"
+      ctx.fillText(annTxt, xO_tl+annOff*Math.sin(ang)+ annOff*0.3,
+      yO_tl-annOff*Math.cos(ang)+8);
+
+      // Not to scale annotation
+      ctx.beginPath();
+      ctx.fillStyle = "white";
+      ctx.font = "12px Verdana";
+      ctx.fillText("Not to scale.", 8, mainCanvas.height - 8)
+    
+    }
+
+    function animateEarth() {
+
+      // Convert polar (R, Theta) into (x,y) coordinates
+      theta_deg += dTheta_deg
+      var theta_rad = theta_deg * Math.PI / 180
+      xE = R * Math.sin(theta_rad)
+      yE = - R * Math.cos(theta_rad)/2.2
+
+      // Draw the primitives on the canvas and set the animation speed
+      drawAll();
+      window.setTimeout(animateEarth, 10);
+    }
+
+
+    distToPix();
+    animateEarth();
+    
+  </script>
+    
+
+    
+    
+  </body>
+</html>
+
+
