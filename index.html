@@ -188,10 +188,12 @@
     
       // Draw the angle sweep line
       ctx1.beginPath();
-      ctx1.moveTo(xE_tl, yE_tl);
+      ctx1.moveTo(xO_tl, yO_tl);
       ctx1.lineTo(xH_tl, 0);
+      ctx1.moveTo(xO_tl, yO_tl);
+      ctx1.lineTo(xE_tl, yE_tl);
       ctx1.setLineDash([7, 3])
-      ctx1.lineWidth=2;
+      ctx1.lineWidth=2.0;
       ctx1.strokeStyle = 'grey';
       ctx1.stroke();
 
@@ -236,7 +238,8 @@
       // Draw projected orbit
       ctx2.beginPath();
       ctx2.setLineDash([7, 3])
-      ctx2.strokeStyle = 'lightgreen';
+      //ctx2.strokeStyle = 'lightgreen';
+      ctx2.strokeStyle = 'grey';
       ctx2.lineWidth=1.5;
       ctx2.ellipse(viewCanvas.width/2, viewCanvas.height/2, R1,
                    R1 * Math.cos(inc_deg * Math.PI / 180), 0, 0, 2*Math.PI)
@@ -251,6 +254,17 @@
       grad.addColorStop(1, "green");
       ctx2.fillStyle = grad;
       ctx2.fill();
+
+      // Print the month
+      var months = ["January", "February", "March", "April", "May", "June",
+                  "July", "August", "September", "October", "November",
+                  "December" ]
+      ctx2.beginPath();
+      ctx2.fillStyle = "grey";
+      ctx2.font = "14px Verdana";
+      ctx2.textAlign="start";
+      ctx2.fillText(months[Math.floor(theta_deg/30)], 8,
+                    viewCanvas.height-8)
     
       // Final annotations
       ctx1.beginPath();
@@ -319,7 +333,7 @@
       }
 
       // Set the animation speed
-      window.setTimeout(animate, 10);
+      window.setTimeout(animate, 15);
 
     }	       
     
