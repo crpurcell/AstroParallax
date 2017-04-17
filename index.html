@@ -29,7 +29,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=300">
+    <meta name="viewport" content="width=610">
     <title>Astronomical Parallax Simulation</title>
     <style>
       input[type="range"] {
@@ -170,7 +170,7 @@
       R1 = R * yO/ d_pix
       var theta_rad = theta_deg * Math.PI / 180
       var xP = R1 * Math.sin(-theta_rad)
-      var yP = - R1 * Math.cos(theta_rad) * Math.cos(inc_deg * Math.PI / 180)
+      var yP = R1 * Math.cos(theta_rad) * Math.cos(inc_deg * Math.PI / 180)
       var xP_tl = viewCanvas.width/2 + xP
       var yP_tl = viewCanvas.height/2 + yP
     
@@ -319,16 +319,16 @@
       theta_deg %= 360
       var theta_rad = theta_deg * Math.PI / 180
       xE = R * Math.sin(theta_rad)
-      yE = - R * Math.cos(theta_rad) * Math.sin(inc_deg * Math.PI / 180)
+      yE = R * Math.cos(theta_rad) * Math.sin(inc_deg * Math.PI / 180)
     
       // Draw primitives on the canvas and set the animation speed
       drawAll();
 
       // Draw the Sun and orbit line in the forground during Earth eclipse
       if (theta_deg > 256 || theta_deg < 90) {
-        drawSun();
         drawNearEarthOrbit();
       } else {
+        drawSun();
 	drawNearEarthOrbit();
       }
 
