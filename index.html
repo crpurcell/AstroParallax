@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <!--
  Illustration of Astronomical Parallax inspired by the tutorial found at
  physics.weber.edu/schroeder/html5/.
@@ -30,7 +29,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=400">
+    <meta name="viewport" content="width=300">
     <title>Astronomical Parallax Simulation</title>
     <style>
       input[type="range"] {
@@ -51,39 +50,56 @@
   </head>
   <body style="font-family:sans-serif; 
 	       font-size:15px; 
-	       width:400px; 
+	       width:610px; 
 	       margin-left:auto; 
 	       margin-right:auto; 
 	       background-color: #bababa;">
     <h1>Astronomical Parallax</h1>
+      
     <p>This simulation allows you to explore the parallax behaviour of a
       relatively nearby object seen against a far-field background.</p>
     
-    <div style="width:300px; margin-left:auto; margin-right:auto;">
+    <div style="width:300px; float: left; ">
       <img src="parallax_bg.png" width="300" height="400"
 	   style="position:absolute;">
       <canvas id="mainCanvas" width="300" height="400"
 	      style="position:relative; z-index: 1;" >
 	Canvas not supported; please update your browser.
       </canvas>
-    </div>
-
-    <div style="text-align:center;">
-      &nbsp;&nbsp;&nbsp;
+    </div>    
+    
+    <div style="width:300px;  float: right;">
+      <img src="star_field.png" width="300" height="300"
+	   style="position:absolute;">
+      <canvas id="viewCanvas" width="300" height="300"
+	      style="position:relative; z-index: 1;" >
+      </canvas>
       Distance = <span id="distReadout" style="display:inline-block;
-			width:1.3em; text-align:right;">0.7</span> parsec
+		      width:1.3em; text-align:right;">1.5</span> parsec
       <input type="range" id="distSlider" min="0.5" max="2.0" step="0.1"
-	     value="0.7" style="width: 200px;" oninput="showDist();"
+	     value="1.5" style="width: 145px;" oninput="showDist();"
 	     onchange="showDist();">
-  </div>
+      
+      Inclination = <span id="incReadout" style="display:inline-block;
+		      width:2.0em; text-align:right;">7</span> deg
+      <input type="range" id="incSlider" min="0.0" max="60.0" step="1"
+	     value="7" style="width: 145px;" oninput="showInc();"
+	     onchange="showInc();">
+    </div>    
+    
+<!---------------------------------------------------------------------------->
     
     <script>
 
     // Canvas & widget elements
     var mainCanvas = document.getElementById("mainCanvas");
-    var ctx = mainCanvas.getContext("2d");
+    var ctx1 = mainCanvas.getContext("2d");
+    var viewCanvas = document.getElementById("viewCanvas");
+    var ctx2 = viewCanvas.getContext("2d");
     var distSlider = document.getElementById("distSlider");
     var distReadout = document.getElementById("distReadout");
+    var incSlider = document.getElementById("incSlider");
+    var incReadout = document.getElementById("incReadout");
 
     // Load the image of the Sun
     var sunImg = new Image();
@@ -96,20 +112,16 @@
     var theta_deg = 0             // Orbit starting angle
     var dTheta_deg = 1            // Orbit angle increment
     var inc_deg = 7               // Orbit inclination angle
-
-    // Variables for 600 x 800 background image
-    //var R = 100                   // Earth orbit radius
-    //var yOMin = 200, yOMax = 500  // Object position limits
-    //var yH = 100                  // Horizon line
-    //var xSun = 298, ySun = 680    // Sun position
-    //var annOff = 50               // Angle annotation offset
     
-    // Variables for 300 x 400 image
+    // Variables for 300px scaled image
     var R = 60                    // Earth orbit radius
-    var yOMin = 110, yOMax = 250  // Object position limits
-    var yH = 40                   // Horizon line
+    var yOMin = 70, yOMax = 230  // Object position limits
     var xSun = 150, ySun = 340    // Sun position
-    var annOff = 25               // Angle annotation offset
+    var annOff = 40               // Angle annotation offset
+    
+    // Start the animation
+    animate();
+
     
     function distToPix() {
 
@@ -120,6 +132,10 @@
       tmp = (d_pc - dMin_pc) * (yOMax - yOMin) / (dMax_pc - dMin_pc);
       yO = yOMax - tmp;
       d_pix = ySun - yO
+
+      // Set the inclination angle
+      inc_deg = Number(incSlider.value);
+    
     }
 
     function showDist() {
@@ -128,6 +144,11 @@
       distReadout.innerHTML = distSlider.value;
     }
     
+    function showInc() {
+
+      // Show the inclination angle value in the HTML
+      incReadout.innerHTML = incSlider.value;
+    }
     
     function drawAll() {
 
@@ -143,126 +164,137 @@
       var yO_tl = yO
 
       // Projected horizon position, relative to top-left
-      var yH_tl = yH
-      var xH_tl = xSun - xE * (yO - yH) / (yE_tl - yO)
+      var xH_tl = xSun - xE * yO / (yE_tl - yO)
 
       // Projected object motion
-      R1 = R * (yO - yH)/ d_pix
+      R1 = R * yO/ d_pix
       var theta_rad = theta_deg * Math.PI / 180
       var xP = R1 * Math.sin(-theta_rad)
-      var yP = - R1 * Math.cos(theta_rad) * Math.sin(inc_deg * Math.PI / 180)
+      var yP = - R1 * Math.cos(theta_rad) * Math.cos(inc_deg * Math.PI / 180)
+      var xP_tl = viewCanvas.width/2 + xP
+      var yP_tl = viewCanvas.height/2 + yP
     
-      // Clear the canvas for a new frame
-      ctx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);    
+      // Clear both canvas for a new frame
+      ctx1.clearRect(0, 0, mainCanvas.width, mainCanvas.height);   
+      ctx2.clearRect(0, 0, viewCanvas.width, viewCanvas.height);    
 
-      // Draw the sun
-      ctx.fillStyle = "orange";
-      ctx.textAlign="center"; 
-      ctx.fillText("The Sun", xSun, ySun + sunImg.height/2)
-      ctx.textAlign="start"; 
+      // Draw the sun and far Earth orbit
+      ctx1.fillStyle = "orange";
+      ctx1.font = "14px Verdana";
+      ctx1.textAlign="center"; 
+      ctx1.fillText("The Sun", xSun, ySun + sunImg.height/2)
       drawFarEarthOrbit();
       drawSun();
     
-      // Draw connecting lines
-      ctx.beginPath();
-      ctx.moveTo(xE_tl, yE_tl);
-      //ctx.lineTo(xH_tl, yH_tl);
-      //ctx.lineTo(xSun+xP, yH+yP);
-      ctx.lineTo(xH_tl, yH+yP);
-      ctx.setLineDash([7, 3])
-      ctx.lineWidth=2;
-      ctx.strokeStyle = 'grey';
-      ctx.stroke();
+      // Draw the angle sweep line
+      ctx1.beginPath();
+      ctx1.moveTo(xE_tl, yE_tl);
+      ctx1.lineTo(xH_tl, 0);
+      ctx1.setLineDash([7, 3])
+      ctx1.lineWidth=2;
+      ctx1.strokeStyle = 'grey';
+      ctx1.stroke();
 
-      // Draw Earth
-      ctx.beginPath();
-      ctx.arc(xE_tl, yE_tl, 5, 0, 2*Math.PI);
-      var grad = ctx.createRadialGradient(xE_tl-1, yE_tl-2, 1,
-                                          xE_tl, yE_tl, 5);
+      // Draw the Earth
+      ctx1.beginPath();
+      ctx1.arc(xE_tl, yE_tl, 5, 0, 2*Math.PI);
+      var grad = ctx1.createRadialGradient(xE_tl-1, yE_tl-2, 1,
+                                            xE_tl, yE_tl, 5);
       grad.addColorStop(0, "#b3bdf8");
       grad.addColorStop(1, "blue");
-      ctx.fillStyle = grad;
-      ctx.fill();
+      ctx1.fillStyle = grad;
+      ctx1.fill();
 
-      // Draw object
+      // Draw the foreground object
       var xO_tl = xSun + xO
       var yO_tl = yO
-      ctx.beginPath();
-      ctx.arc(xO_tl, yO_tl, 5, 0, 2*Math.PI);
-      var grad1 = ctx.createRadialGradient(xO_tl-1, yO_tl-2, 1,
+      ctx1.beginPath();
+      ctx1.arc(xO_tl, yO_tl, 5, 0, 2*Math.PI);
+      var grad = ctx1.createRadialGradient(xO_tl-1, yO_tl-2, 1,
                                            xO_tl, yO_tl, 5);
-      grad1.addColorStop(0, "white");
-      grad1.addColorStop(1, "green");
-      ctx.fillStyle = grad1;
-    ctx.fill();
-
-      // Draw projected image
-      //ctx.beginPath();
-      //ctx.arc(xSun+xP, yH+yP, 5, 0, 2*Math.PI);
-      //ctx.fillStyle = "green";
-      //ctx.fill();
+      grad.addColorStop(0, "white");
+      grad.addColorStop(1, "green");
+      ctx1.fillStyle = grad;
+      ctx1.fill();
 
       // Draw the angle annotation
       var ang = Math.atan(R/d_pix)
-      ctx.beginPath();
-      ctx.arc(xO_tl, yO_tl, annOff, -ang-Math.PI/2, +ang-Math.PI/2);
-      ctx.setLineDash([7, 0])
-      ctx.strokeStyle = "yellow";
-      ctx.lineWidth=2;
-      ctx.stroke();
-      ctx.font = "16px Verdana";
-      ctx.fillStyle = "yellow";
       var parAngle_asec = 1/d_pc
+      ctx1.beginPath();
+      ctx1.arc(xO_tl, yO_tl, annOff, -ang-Math.PI/2, +ang-Math.PI/2);
+      ctx1.setLineDash([7, 0])
+      ctx1.strokeStyle = "yellow";
+      ctx1.lineWidth=2;
+      ctx1.stroke();
+      ctx1.fillStyle = "yellow";
+      ctx1.font = "14px Verdana";
+      ctx1.textAlign="start"; 
       var annTxt = "Angle = " + parAngle_asec.toFixed(2) + "''"
-      ctx.fillText(annTxt, xO_tl+annOff*Math.sin(ang)+ annOff*0.3,
-      yO_tl-annOff*Math.cos(ang)+8);
+      ctx1.fillText(annTxt, xO_tl+annOff*Math.sin(ang)+ annOff*0.3,
+                    yO_tl-annOff*Math.cos(ang)+8);
 
       // Draw projected orbit
-      ctx.beginPath();
-      ctx.setLineDash([7, 3])
-      ctx.strokeStyle = 'lightgreen';
-      ctx.lineWidth=2.0;
-      ctx.ellipse(xSun, yH, R1, R1 * Math.sin(inc_deg * Math.PI / 180), 0, Math.PI, 0)
-      ctx.stroke();
-      ctx.lineWidth=1.5;
-      ctx.ellipse(xSun, yH, R1, R1 * Math.sin(inc_deg * Math.PI / 180), 0, 0, Math.PI)
-      ctx.stroke();
+      ctx2.beginPath();
+      ctx2.setLineDash([7, 3])
+      ctx2.strokeStyle = 'lightgreen';
+      ctx2.lineWidth=1.5;
+      ctx2.ellipse(viewCanvas.width/2, viewCanvas.height/2, R1,
+                   R1 * Math.cos(inc_deg * Math.PI / 180), 0, 0, 2*Math.PI)
+      ctx2.stroke();
 
+      // Draw view of object
+      ctx2.beginPath();
+      ctx2.arc(xP_tl, yP_tl, 5, 0, 2*Math.PI);
+      var grad = ctx1.createRadialGradient(xP_tl-1, yP_tl-2, 1,
+                                           xP_tl, yP_tl, 5);
+      grad.addColorStop(0, "white");
+      grad.addColorStop(1, "green");
+      ctx2.fillStyle = grad;
+      ctx2.fill();
     
-      // Not to scale annotation
-      ctx.beginPath();
-      ctx.fillStyle = "white";
-      ctx.font = "12px Verdana";
-      ctx.fillText("Not to scale.", 8, mainCanvas.height - 8)
+      // Final annotations
+      ctx1.beginPath();
+      ctx1.fillStyle = "white";
+      ctx1.font = "14px Verdana";
+      ctx1.textAlign="start"; 
+      ctx1.fillText("Not to scale.", 8, mainCanvas.height - 8)
+      ctx1.fillText("Background stars.", 8, 12 + 8)
+      ctx2.beginPath();
+      ctx2.fillStyle = "white";
+      ctx2.font = "14px Verdana";
+      ctx2.textAlign="start"; 
+      ctx2.fillText("View from Earth through a telescope.", 8, 12 + 8)
     
     }
 
     function drawSun() {
-      ctx.drawImage(sunImg, xSun-sunImg.width/4, ySun-sunImg.height/4,
+      ctx1.drawImage(sunImg, xSun-sunImg.width/4, ySun-sunImg.height/4,
                     sunImg.width/2, sunImg.height/2);
     }
 
     function drawNearEarthOrbit() {
-      ctx.ellipse(xSun, ySun, R, R * Math.sin(inc_deg * Math.PI / 180.0), 0, 0, Math.PI)
-      ctx.setLineDash([7, 3])
-      ctx.lineWidth=2;
-      ctx.strokeStyle = 'grey';
-      ctx.stroke();
+      ctx1.ellipse(xSun, ySun, R, R * Math.sin(inc_deg * Math.PI / 180.0),
+                   0, 0, Math.PI)
+      ctx1.setLineDash([7, 3])
+      ctx1.lineWidth=2;
+      ctx1.strokeStyle = 'grey';
+      ctx1.stroke();
     }
 	       
     function drawFarEarthOrbit() {
-      ctx.ellipse(xSun, ySun, R, R * Math.sin(inc_deg * Math.PI / 180), 0, Math.PI, 0)
-      ctx.setLineDash([7, 3])
-      ctx.lineWidth=1.5;
-      ctx.strokeStyle = 'grey';
-      ctx.stroke();
+      ctx1.ellipse(xSun, ySun, R, R * Math.sin(inc_deg * Math.PI / 180),
+                   0, Math.PI, 0)
+      ctx1.setLineDash([7, 3])
+      ctx1.lineWidth=1.5;
+      ctx1.strokeStyle = 'grey';
+      ctx1.stroke();
 
       // Annotate the Earth
-      ctx.font = "12px Verdana";
-      ctx.fillStyle = '#6b72f8';
-      ctx.textAlign="end"; 
-      ctx.fillText("Earth", xSun-R-10, ySun+4)
-      ctx.textAlign="start"; 
+      ctx1.font = "12px Verdana";
+      ctx1.fillStyle = '#6b72f8';
+      ctx1.textAlign="end"; 
+      ctx1.fillText("Earth", xSun-R-10, ySun+4)
+      ctx1.textAlign="start"; 
     
     }
     
@@ -279,7 +311,7 @@
       drawAll();
 
       // Draw the Sun and orbit line in the forground during Earth eclipse
-      if (yE < 0) {
+      if (theta_deg > 256 || theta_deg < 90) {
         drawSun();
         drawNearEarthOrbit();
       } else {
@@ -289,16 +321,9 @@
       // Set the animation speed
       window.setTimeout(animate, 10);
 
-    }
-	       
-
-    distToPix();
-    animate();
+    }	       
     
   </script>
-    
-
-    
     
   </body>
 </html>
