@@ -117,7 +117,7 @@
     var R = 60                    // Earth orbit radius
     var yOMin = 70, yOMax = 230  // Object position limits
     var xSun = 150, ySun = 340    // Sun position
-    var annOff = 40               // Angle annotation offset
+    var annOff = 60               // Angle annotation offset
     
     // Start the animation
     animate();
@@ -221,19 +221,31 @@
 
       // Draw the angle annotation
       var ang = Math.atan(R/d_pix)
-      var parAngle_asec = 1/d_pc
+      var parAngle_asec = 1/(d_pc)
+      var xArcEnd = xO_tl + annOff * Math.sin(ang)
+      var yArcEnd = yO_tl- annOff * Math.cos(ang)
       ctx1.beginPath();
-      ctx1.arc(xO_tl, yO_tl, annOff, -ang-Math.PI/2, +ang-Math.PI/2);
-      ctx1.setLineDash([7, 0])
+      ctx1.setLineDash([5, 5])
       ctx1.strokeStyle = "yellow";
-      ctx1.lineWidth=2;
+      ctx1.lineWidth=1.0;
+      ctx1.moveTo(xO_tl, yO_tl);
+      ctx1.lineTo(xArcEnd, yArcEnd);
+      ctx1.moveTo(xO_tl, yO_tl);
+      ctx1.lineTo(xO_tl, yO_tl-annOff);
       ctx1.stroke();
+      ctx1.beginPath();
+      ctx1.setLineDash([1, 0])
+      ctx1.lineWidth=3.0;
+      ctx1.arc(xO_tl, yO_tl, annOff, -Math.PI/2, +ang-Math.PI/2);
+      ctx1.stroke();
+      //ctx1.stroke();
+      //ctx1.lineTo(xO_tl, yO_tl);
       ctx1.fillStyle = "yellow";
       ctx1.font = "14px Verdana";
       ctx1.textAlign="start"; 
       var annTxt = "Angle = " + parAngle_asec.toFixed(2) + "''"
-      ctx1.fillText(annTxt, xO_tl+annOff*Math.sin(ang)+ annOff*0.3,
-                    yO_tl-annOff*Math.cos(ang)+8);
+      ctx1.fillText(annTxt, xO_tl+annOff*Math.sin(ang)+ annOff*0.1,
+                    yO_tl-annOff*Math.cos(ang)/2);
 
       // Draw projected orbit
       ctx2.beginPath();
@@ -304,7 +316,7 @@
       ctx1.stroke();
 
       // Annotate the Earth
-      ctx1.font = "12px Verdana";
+      ctx1.font = "14px Verdana";
       ctx1.fillStyle = '#6b72f8';
       ctx1.textAlign="end"; 
       ctx1.fillText("Earth", xSun-R-10, ySun+4)
